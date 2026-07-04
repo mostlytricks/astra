@@ -9,15 +9,12 @@
 Last touched: 2026-07-04
 
 ## Completed
-- Scaffolded + interviewed; built the **adoption loop** slice (skill page → zip → paste-install, machine-verified byte-identical).
-- Built the **system core** slice: JSON API (`GET /api/skills`, `GET /api/skills/{name}/{version}`), token-guarded `POST /api/publish` (immutability 409, zip-slip guard, frontmatter validation, atomic temp-dir extract), `astra-publish` curator skill served from the registry itself, and a pytest wall.
-- Built the **catalog + rich UI** slice (skills.sh-inspired): `templates/base.html` (shared dark theme, ASTRA wordmark, sticky nav), `templates/index.html` (hero + live search + ranked skill rows), richer `templates/skill.html` (version pills, adopt panel, spec typography). 16 tests green.
+- Day one shipped four slices: adoption loop (✓ demo accepted) · system core (JSON API, guarded immutable publish, `astra-publish` skill) · catalog + rich UI (skills.sh-style) · `latest` alias (redirect page, download, API; latest-tracking install commands on newest page, pinned on older). First commit `4ded61e` + the latest-alias commit.
 
 ## Current State
-- Runs locally: `ASTRA_PUBLISH_TOKEN=dev-local-token .venv/Scripts/python -m uvicorn astra.main:app --port 8300` → http://localhost:8300. Registry serves `dashboarding@1.0.0` + `astra-publish@1.0.0`.
-- Gate: `.venv/Scripts/python -m pytest -q` — 16 passed 2026-07-04.
-- **Nothing committed** (first commit is the user's call); no remote.
-- All three shipped slices closed (adoption-loop `[review]` demo accepted by user 2026-07-04). Intranet deployment deferred — user's own task.
+- Runs locally: `ASTRA_PUBLISH_TOKEN=dev-local-token .venv/Scripts/python -m uvicorn astra.main:app --port 8300` → http://localhost:8300. Registry: `dashboarding@1.0.0`, `astra-publish@1.0.0`.
+- Gate: `.venv/Scripts/python -m pytest -q` — 18 passed 2026-07-04.
+- No remote. Intranet deployment deferred (user's own task; one-liners auto-adapt to serving host).
 
 ## Next Step
-- User picks the next system slice (`latest` alias vs deprecate/yank) — the `now` lane is OPEN in IMPLEMENTATION_PLAN.md. Also owed: the first commit.
+- User picks the next slice — deprecate/yank support is the top `next` candidate; `later` pool: install-check UI, version history view, download analytics. Also worth considering: `DESIGN.md` to lock the UI tokens now that the look is settled.

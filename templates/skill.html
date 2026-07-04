@@ -78,7 +78,9 @@
 
 <div class="adopt">
   <h2>Adopt this skill</h2>
-  <p class="sub">One paste in PowerShell — installs to your personal skills folder. No git, no accounts.</p>
+  <p class="sub">One paste in PowerShell — installs to your personal skills folder. No git, no accounts.
+    {% if is_latest %}This command <b>tracks latest</b>: the same paste later installs whatever is newest.
+    {% else %}This command is <b>pinned to v{{ version }}</b> — an older release; latest is v{{ versions[-1] }}.{% endif %}</p>
   <div class="cmd-block">
     <div class="cmd" id="cmd">{{ install_cmd }}</div>
     <button class="copy" onclick="copyText(this, 'cmd')">Copy</button>

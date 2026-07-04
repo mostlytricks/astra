@@ -17,7 +17,7 @@ from pathlib import Path
 
 import markdown
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -110,6 +110,11 @@ def api_skills():
     return {"skills": items}
 
 
+@app.get("/api/skills/{name}/latest")
+def api_skill_latest(name: str):
+    return api_skill(name, resolve_latest(name))
+
+
 @app.get("/api/skills/{name}/{version}")
 def api_skill(name: str, version: str):
     d = skill_dir(name, version)
@@ -170,6 +175,25 @@ async def api_publish(request: Request, name: str, version: str):
     return {"published": f"{name}@{version}", "page": f"/skills/{name}/{version}"}
 
 
+def resolve_latest(name: str) -> str:
+    versions = list_registry().get(name)
+    if not versions:
+        raise HTTPException(status_code=404, detail=f"no skill named {name}")
+    return versions[-1]
+
+
+# "latest" alias routes — declared BEFORE the {version} routes so the literal
+# path wins; a shared install command keeps working across version bumps
+@app.get("/skills/{name}/latest", response_class=HTMLResponse)
+def skill_page_latest(name: str):
+    return RedirectResponse(f"/skills/{name}/{resolve_latest(name)}")
+
+
+@app.get("/skills/{name}/latest/download")
+def skill_download_latest(name: str):
+    return skill_download(name, resolve_latest(name))
+
+
 @app.get("/skills/{name}/{version}", response_class=HTMLResponse)
 def skill_page(request: Request, name: str, version: str):
     d = skill_dir(name, version)
@@ -178,8 +202,12 @@ def skill_page(request: Request, name: str, version: str):
         str(p.relative_to(d)).replace("\\", "/")
         for p in d.rglob("*") if p.is_file()
     )
+    versions = list_registry().get(name, [version])
+    is_latest = version == versions[-1]
     base = str(request.base_url).rstrip("/")
-    zip_url = f"{base}/skills/{name}/{version}/download"
+    # the latest version's page hands out a latest-tracking command, so a
+    # shared/saved paste keeps installing the newest release after bumps
+    zip_url = f"{base}/skills/{name}/{'latest' if is_latest else version}/download"
     target = f"$env:USERPROFILE\\.claude\\skills\\{name}"
     install_cmd = (
         f'iwr {zip_url} -OutFile "$env:TEMP\\{name}.zip"; '
@@ -189,7 +217,8 @@ def skill_page(request: Request, name: str, version: str):
     return templates.TemplateResponse(request, "skill.html", {
         "name": meta.get("name", name),
         "version": version,
-        "versions": list_registry().get(name, [version]),
+        "versions": versions,
+        "is_latest": is_latest,
         "description": meta.get("description", ""),
         "body_html": markdown.markdown(body, extensions=["fenced_code", "tables"]),
         "files": files,

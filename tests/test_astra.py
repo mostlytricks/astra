@@ -85,6 +85,33 @@ def test_download_roundtrip_is_byte_identical(client):
     assert zf.read("SKILL.md") == disk
 
 
+def test_latest_alias_tracks_newest_version(client):
+    # seed a second, newer version so latest has something to resolve
+    z = make_zip({"SKILL.md": SKILL_MD.format(name="demo", description="v2 desc")})
+    assert publish(client, "demo", "1.10.0", z).status_code == 201
+
+    # page redirects to the newest version
+    r = client.get("/skills/demo/latest")
+    assert r.status_code == 200 and r.url.path.endswith("/demo/1.10.0")
+
+    # download serves the newest bytes
+    zf = zipfile.ZipFile(io.BytesIO(client.get("/skills/demo/latest/download").content))
+    assert "v2 desc" in zf.read("SKILL.md").decode("utf-8")
+
+    # API resolves too
+    assert client.get("/api/skills/demo/latest").json()["version"] == "1.10.0"
+
+    # the newest page hands out a latest-tracking command; older pages stay pinned
+    assert "/skills/demo/latest/download" in client.get("/skills/demo/1.10.0").text
+    old = client.get("/skills/demo/1.0.0").text
+    assert "/skills/demo/1.0.0/download" in old and "pinned to v1.0.0" in old
+
+
+def test_latest_alias_404s_for_unknown_skill(client):
+    assert client.get("/skills/nope/latest").status_code == 404
+    assert client.get("/api/skills/nope/latest").status_code == 404
+
+
 def test_unknown_skill_404s(client):
     assert client.get("/skills/nope/1.0.0").status_code == 404
     assert client.get("/api/skills/nope/1.0.0").status_code == 404
