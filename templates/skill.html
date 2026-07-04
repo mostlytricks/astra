@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} v{{ version }} — astra{% endblock %}
+
+{% block style %}
+  .crumb { color: var(--faint); font-size: 13px; margin-bottom: 26px; font-family: var(--mono); }
+  .crumb a { color: var(--dim); }
+
+  .head h1 { margin: 0 0 6px; font-size: 34px; letter-spacing: -.8px; display: flex;
+             align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .head h1 .ver { color: var(--accent2); font-size: 19px; font-family: var(--mono); font-weight: 400; }
+  .desc { color: var(--dim); margin: 0 0 18px; max-width: 680px; font-size: 15.5px; }
+
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 34px; }
+  .vpills { display: inline-flex; gap: 6px; align-items: center; }
+  .vpill { font-family: var(--mono); font-size: 12px; padding: 2px 10px; border-radius: 99px;
+           border: 1px solid var(--line); color: var(--dim); }
+  a.vpill:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+  .vpill.cur { border-color: var(--accent2); color: var(--accent2); font-weight: 700; }
+
+  .adopt { background: linear-gradient(160deg, var(--panel), var(--card));
+           border: 1px solid var(--line2); border-radius: 14px; padding: 26px; margin-bottom: 44px;
+           position: relative; overflow: hidden; }
+  .adopt::before { content: '✦'; position: absolute; right: -10px; top: -34px; font-size: 130px;
+                   color: var(--accent2); opacity: .06; pointer-events: none; }
+  .adopt h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase;
+              letter-spacing: 2.5px; color: var(--accent); }
+  .adopt .sub { margin: 0 0 16px; color: var(--dim); font-size: 13.5px; }
+  .adopt .step { display: flex; gap: 12px; margin-top: 16px; font-size: 13.5px; color: var(--dim);
+                 align-items: baseline; }
+  .adopt .step .n { font-family: var(--mono); color: var(--accent2); font-weight: 700; }
+  .adopt .step code { color: var(--ok); font-family: var(--mono); font-size: 12.5px; }
+  .adopt .alt a { font-weight: 600; }
+
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 2.5px;
+                   color: var(--faint); margin: 0 0 16px; padding-bottom: 10px;
+                   border-bottom: 1px solid var(--line); }
+  .spec { max-width: 760px; }
+  .spec h1 { font-size: 26px; letter-spacing: -.5px; margin-top: 0; }
+  .spec h2 { font-size: 19px; letter-spacing: -.3px; margin-top: 36px;
+             padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .spec h3 { font-size: 16px; }
+  .spec p, .spec li { color: #c6cddf; }
+  .spec strong { color: var(--ink); }
+  .spec pre { background: #05060a; border: 1px solid var(--line); border-radius: 10px;
+              padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.55; }
+  .spec code { font-family: var(--mono); font-size: .9em; color: #b8c7f0; }
+  .spec :not(pre) > code { background: var(--card); border: 1px solid var(--line);
+                           border-radius: 5px; padding: 1px 6px; }
+  .spec table { border-collapse: collapse; }
+  .spec td, .spec th { border: 1px solid var(--line); padding: 7px 14px; }
+  .spec blockquote { border-left: 3px solid var(--accent2); margin: 0; padding: 2px 18px;
+                     color: var(--dim); }
+
+  .files { margin-top: 50px; }
+  .files ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .files li { font-family: var(--mono); font-size: 12.5px; color: var(--dim);
+              background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+              padding: 4px 12px; }
+{% endblock %}
+
+{% block content %}
+<div class="crumb"><a href="/">skills</a> / {{ name }} / v{{ version }}</div>
+
+<div class="head">
+  <h1>{{ name }} <span class="ver">v{{ version }}</span></h1>
+  <p class="desc">{{ description }}</p>
+  <div class="meta">
+    <span class="chip">target <b>Claude Code</b></span>
+    <span class="chip">files <b>{{ files | length }}</b></span>
+    <span class="vpills">
+      {% for v in versions %}
+        {% if v == version %}<span class="vpill cur">{{ v }}</span>
+        {% else %}<a class="vpill" href="/skills/{{ name }}/{{ v }}">{{ v }}</a>{% endif %}
+      {% endfor %}
+    </span>
+  </div>
+</div>
+
+<div class="adopt">
+  <h2>Adopt this skill</h2>
+  <p class="sub">One paste in PowerShell — installs to your personal skills folder. No git, no accounts.</p>
+  <div class="cmd-block">
+    <div class="cmd" id="cmd">{{ install_cmd }}</div>
+    <button class="copy" onclick="copyText(this, 'cmd')">Copy</button>
+  </div>
+  <div class="step"><span class="n">check</span>
+    <span>open Claude Code and type <code>{{ install_check }}</code> — it should appear as a command.</span></div>
+  <div class="step alt"><span class="n">or</span>
+    <span><a href="{{ download_url }}">download {{ name }}-{{ version }}.zip</a> and unzip into
+    <code>%USERPROFILE%\.claude\skills\{{ name }}\</code></span></div>
+</div>
+
+<div class="section-title">Skill specification — exactly what your agent will load</div>
+<div class="spec">{{ body_html | safe }}</div>
+
+<div class="files">
+  <div class="section-title">Bundle contents ({{ files | length }})</div>
+  <ul>{% for f in files %}<li>{{ f }}</li>{% endfor %}</ul>
+</div>
+{% endblock %}

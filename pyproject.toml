@@ -1,0 +1,21 @@
+[project]
+name = "astra"
+version = "0.1.0"
+description = "ASTRA — Agent Skill Transfer & Registry App: intranet skill catalog with one-paste adoption"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "jinja2",
+    "markdown",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["astra"]
