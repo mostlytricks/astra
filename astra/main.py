@@ -11,6 +11,7 @@ import io
 import os
 import re
 import shutil
+import sys
 import tempfile
 import zipfile
 from pathlib import Path
@@ -25,6 +26,18 @@ REGISTRY = ROOT / "registry"
 
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+
+# ── the bundle contract (CLAUDE.md §Conventions): adopters run on locked-down
+# Korean-Windows boxes, so a publishable skill keeps relative paths only,
+# stdlib-only scripts, and ASCII-only console output (cp949 consoles). These are
+# mechanically checkable, so they become real walls — not [review]. ───────────
+SCRIPT_EXTS = {".py", ".ps1", ".psm1", ".sh", ".bat", ".cmd"}
+TEXT_EXTS = SCRIPT_EXTS | {".json", ".yaml", ".yml", ".toml", ".txt", ".cfg", ".ini", ".md"}
+OUTPUT_RE = re.compile(r"\b(?:print|echo|write-host|write-output)\b", re.IGNORECASE)
+IMPORT_RE = re.compile(r"^\s*(?:import\s+([\w.]+)|from\s+([\w.]+)\s+import)", re.MULTILINE)
+STDLIB = set(sys.stdlib_module_names)
+MAX_FILE_BYTES = 5 * 1024 * 1024      # per-file uncompressed ceiling (bomb guard)
+MAX_BUNDLE_BYTES = 20 * 1024 * 1024   # whole-bundle uncompressed ceiling
 
 app = FastAPI(title="astra")
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
@@ -74,6 +87,106 @@ def list_registry() -> dict[str, list[str]]:
             if versions:
                 out[skill.name] = sorted(versions, key=semver_key)
     return out
+
+
+def imported_modules(py_source: str) -> set[str]:
+    """Top-level module names imported by a .py file (relative imports excluded)."""
+    mods = set()
+    for m in IMPORT_RE.finditer(py_source):
+        mod = m.group(1) or m.group(2) or ""
+        if mod and not mod.startswith("."):
+            mods.add(mod)
+    return mods
+
+
+def validate_bundle(zf: zipfile.ZipFile) -> list[dict]:
+    """Check a skill zip against the bundle contract. Returns findings, each
+    {severity, code, path, message}; `severity == "error"` blocks a publish,
+    `"warn"` is surfaced for the curator's judgment. Reads nothing to disk."""
+    findings: list[dict] = []
+
+    def add(sev, code, path, msg):
+        findings.append({"severity": sev, "code": code, "path": path, "message": msg})
+
+    # bomb guard first — never read a zip that claims to be enormous
+    total = 0
+    for zi in zf.infolist():
+        total += zi.file_size
+        if zi.file_size > MAX_FILE_BYTES:
+            add("error", "too-large", zi.filename,
+                f"{zi.filename} is {zi.file_size} bytes, over the {MAX_FILE_BYTES}-byte per-file limit")
+    if total > MAX_BUNDLE_BYTES:
+        add("error", "bundle-too-large", "",
+            f"bundle is {total} uncompressed bytes, over the {MAX_BUNDLE_BYTES}-byte limit")
+    if findings:
+        return findings
+
+    names = zf.namelist()
+
+    # relative paths only
+    for e in names:
+        if e.startswith("/") or ".." in e or ":" in e or "\\" in e:
+            add("error", "path-unsafe", e, f"unsafe path in bundle: {e!r} — relative paths only")
+
+    # SKILL.md at the root + frontmatter
+    if "SKILL.md" not in names:
+        add("error", "missing-skill-md", "SKILL.md",
+            "bundle must contain SKILL.md at its root (zip the folder's contents, not the folder)")
+    else:
+        meta, _ = parse_skill_text(zf.read("SKILL.md").decode("utf-8", "replace"))
+        fname = meta.get("name", "")
+        if not fname:
+            add("error", "frontmatter-name", "SKILL.md", "SKILL.md frontmatter must carry a name")
+        elif not NAME_RE.match(fname):
+            add("error", "frontmatter-name", "SKILL.md",
+                f"SKILL.md frontmatter name must be kebab-case: {fname!r}")
+        if not meta.get("description"):
+            add("error", "frontmatter-desc", "SKILL.md",
+                "SKILL.md frontmatter must carry a non-empty description")
+
+    # bundled-local module names, so the stdlib check doesn't flag intra-bundle imports
+    local_mods = set()
+    for e in names:
+        top = e.split("/")[0]
+        if "/" in e:
+            local_mods.add(top)              # a package directory
+        elif top.endswith(".py"):
+            local_mods.add(top[:-3])         # a top-level script
+
+    for e in names:
+        if e.endswith("/"):
+            continue
+        ext = os.path.splitext(e)[1].lower()
+        if ext not in TEXT_EXTS:
+            continue                          # binary asset — nothing to read
+        try:
+            text = zf.read(e).decode("utf-8")
+        except UnicodeDecodeError:
+            add("warn", "not-utf8", e, f"{e} is not UTF-8 text — can't verify ASCII/imports")
+            continue
+
+        # ASCII discipline. SKILL.md is exempt: it's rendered as HTML, never printed
+        # to a console, so its rich text (em-dashes, ✦) is fine.
+        if ext != ".md":
+            is_script = ext in SCRIPT_EXTS
+            for i, line in enumerate(text.splitlines(), 1):
+                bad = sorted({c for c in line if ord(c) > 127})
+                if not bad:
+                    continue
+                if is_script and OUTPUT_RE.search(line):
+                    add("error", "console-nonascii", e,
+                        f"{e}:{i} emits non-ASCII {''.join(bad)!r} to the console — breaks on cp949")
+                else:
+                    add("warn", "nonascii", e, f"{e}:{i} contains non-ASCII {''.join(bad)!r}")
+
+        if ext == ".py":
+            for mod in imported_modules(text):
+                root = mod.split(".")[0]
+                if root not in STDLIB and root not in local_mods:
+                    add("warn", "nonstdlib-import", e,
+                        f"{e} imports {mod!r} — not stdlib; locked-down machines have no pip")
+
+    return findings
 
 
 def yank_marker(name: str, version: str) -> Path:
@@ -176,18 +289,16 @@ async def api_publish(request: Request, name: str, version: str):
         zf = zipfile.ZipFile(io.BytesIO(body))
     except zipfile.BadZipFile:
         raise HTTPException(400, "request body is not a zip")
-    entries = zf.namelist()
-    for e in entries:
-        if e.startswith("/") or ".." in e or ":" in e or "\\" in e:
-            raise HTTPException(400, f"unsafe path in zip: {e!r}")
-    if "SKILL.md" not in entries:
-        raise HTTPException(400, "zip must contain SKILL.md at its root (zip the folder's contents, not the folder)")
 
+    # the bundle contract — every error-level finding is a hard wall
+    errors = [f["message"] for f in validate_bundle(zf) if f["severity"] == "error"]
+    if errors:
+        raise HTTPException(400, "; ".join(errors))
+
+    # frontmatter name must match what it's published as (validate can't know it)
     meta, _ = parse_skill_text(zf.read("SKILL.md").decode("utf-8"))
     if meta.get("name") != name:
         raise HTTPException(400, f"SKILL.md frontmatter name {meta.get('name')!r} != published name {name!r}")
-    if not meta.get("description"):
-        raise HTTPException(400, "SKILL.md frontmatter must carry a non-empty description")
 
     # extract to a temp dir inside the registry, then rename into place —
     # a half-written version folder must never be observable
@@ -201,6 +312,26 @@ async def api_publish(request: Request, name: str, version: str):
         shutil.rmtree(tmp, ignore_errors=True)
         raise
     return {"published": f"{name}@{version}", "page": f"/skills/{name}/{version}"}
+
+
+@app.post("/api/validate")
+async def api_validate(request: Request):
+    """Dry-run the bundle contract — the same walls publish enforces, but writes
+    nothing and needs no token. Skill authors (and astra-curate) self-check a zip
+    before publishing. `ok` is false iff any error-level finding is present."""
+    body = await request.body()
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(body))
+    except zipfile.BadZipFile:
+        raise HTTPException(400, "request body is not a zip")
+    findings = validate_bundle(zf)
+    errors = [f for f in findings if f["severity"] == "error"]
+    return {
+        "ok": not errors,
+        "errors": len(errors),
+        "warnings": len(findings) - len(errors),
+        "findings": findings,
+    }
 
 
 @app.post("/api/yank")

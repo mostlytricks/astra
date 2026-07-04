@@ -64,14 +64,14 @@ System tests boot the app against a temp registry (`tests/test_astra.py`) — re
 
 ## Entry Points
 
-- `astra/main.py` — FastAPI app: HTML pages (index, skill detail, zip download) + JSON API (`/api/skills`, `/api/skills/{name}/{version}`, guarded `POST /api/publish`).
-- `registry/` — the on-disk registry (`<skill>/<version>/SKILL.md` …). **The architectural seam:** every surface (page, zip, API, install command) derives from this one folder shape — no second source of truth. `registry/astra-publish/` is the curator's own publish skill, served like any other.
+- `astra/main.py` — FastAPI app: HTML pages (index, skill detail, zip download) + JSON API (`/api/skills`, `/api/skills/{name}/{version}`, guarded `POST /api/publish`, guarded `POST /api/yank`+`/api/unyank`, open dry-run `POST /api/validate`). `validate_bundle()` is the shared **bundle-contract wall** (paths · cp949/ASCII console · stdlib-only): publish enforces its errors, validate reports them, `astra-curate` calls it.
+- `registry/` — the on-disk registry (`<skill>/<version>/SKILL.md` …). **The architectural seam:** every surface (page, zip, API, install command) derives from this one folder shape — no second source of truth. The curator's own skills — `astra-publish` (publish) and `astra-curate` (review gate) — are served like any other.
 - `templates/` — Jinja2 pages: `base.html` owns the shared theme + header/footer (all pages extend it; tokens documented in DESIGN.md); `index.html` = catalog, `skill.html` = detail.
 - `tests/test_astra.py` — the gate.
 
 ## Git
 
-- Remote: none yet (local only).
+- Remote: `github.com/mostlytricks/astra`. First release tagged `v0.1.0`.
 - Default branch: `main`.
 
 ---

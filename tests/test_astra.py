@@ -203,6 +203,82 @@ def test_publish_rejects_non_zip_body(client):
     assert publish(client, "x", "1.0.0", b"just some text").status_code == 400
 
 
+def test_publish_rejects_console_nonascii(client):
+    # a script that prints non-ASCII would mojibake/crash on a cp949 console
+    z = make_zip({
+        "SKILL.md": SKILL_MD.format(name="hangul", description="d"),
+        "run.py": "print('안녕')  # greets in Korean\n",
+    })
+    assert publish(client, "hangul", "1.0.0", z).status_code == 400
+
+
+def test_publish_allows_warnings(client):
+    # a non-stdlib import is a warning, not a wall — publish still succeeds
+    z = make_zip({
+        "SKILL.md": SKILL_MD.format(name="warned", description="d"),
+        "run.py": "import os\nimport requests\nprint('ok')\n",
+    })
+    assert publish(client, "warned", "1.0.0", z).status_code == 201
+
+
+# --- dry-run bundle validation --------------------------------------------
+
+def validate(client, files):
+    return client.post("/api/validate", content=make_zip(files)).json()
+
+
+def test_validate_accepts_clean_bundle(client):
+    body = validate(client, {
+        "SKILL.md": SKILL_MD.format(name="clean", description="d"),
+        "run.py": "import json\nprint('ok')\n",
+    })
+    assert body["ok"] is True and body["errors"] == 0
+
+
+def test_validate_flags_console_nonascii_as_error(client):
+    body = validate(client, {
+        "SKILL.md": SKILL_MD.format(name="x", description="d"),
+        "run.py": "print('안녕')\n",
+    })
+    assert body["ok"] is False
+    assert any(f["code"] == "console-nonascii" for f in body["findings"])
+
+
+def test_validate_warns_nonstdlib_import_but_stays_ok(client):
+    body = validate(client, {
+        "SKILL.md": SKILL_MD.format(name="y", description="d"),
+        "run.py": "import requests\n",
+    })
+    assert body["ok"] is True  # warnings don't block
+    assert any(f["code"] == "nonstdlib-import" for f in body["findings"])
+
+
+def test_validate_rejects_path_traversal(client):
+    body = validate(client, {
+        "SKILL.md": SKILL_MD.format(name="z", description="d"),
+        "../evil.txt": "escape",
+    })
+    assert body["ok"] is False
+    assert any(f["code"] == "path-unsafe" for f in body["findings"])
+
+
+def test_validate_exempts_skill_md_from_ascii(client):
+    # SKILL.md renders as HTML, never prints — rich text is allowed
+    md = SKILL_MD.format(name="rich", description="curated — versioned ✨")
+    body = validate(client, {"SKILL.md": md})
+    assert body["ok"] is True
+    assert not any(f["code"] in ("console-nonascii", "nonascii") for f in body["findings"])
+    assert publish(client, "rich", "1.0.0", make_zip({"SKILL.md": md})).status_code == 201
+
+
+def test_validate_needs_no_token(client, monkeypatch):
+    # authors self-check without the publish token — validate is a read-like lint
+    monkeypatch.delenv("ASTRA_PUBLISH_TOKEN")
+    body = client.post("/api/validate",
+                       content=make_zip({"SKILL.md": SKILL_MD.format(name="a", description="d")})).json()
+    assert body["ok"] is True
+
+
 # --- yank / unyank ---------------------------------------------------------
 
 def test_yank_hides_from_latest_but_keeps_pin_installable(client):
