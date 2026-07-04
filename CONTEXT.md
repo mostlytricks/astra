@@ -9,14 +9,15 @@
 Last touched: 2026-07-04
 
 ## Completed
-- **Deprecate/yank slice shipped** (2026-07-04): curator-only `POST /api/yank` + `/api/unyank` (token-guarded, reversible) mark a version withdrawn via a skill-level sidecar `registry/<skill>/<version>.yanked` — published bytes never change (pins stay installable, download byte-identical). `latest` skips yanked; skill page shows a `--warn` banner + pinned command + line-through pill; catalog flags fully-withdrawn skills. Refactored `index`/`api_skills` onto a shared `catalog()`; `require_token` helper. Not yet committed.
-- Earlier day-one slices: adoption loop · system core · catalog + rich UI · `latest` alias · DESIGN.md locked. (git history has the detail.)
+- **`astra-curate` skill added** (2026-07-04): the curation *review gate* — a served curator-only skill (`registry/astra-curate/1.0.0/`) that reviews an externally-authored skill (agent-safety/prompt-injection · executable safety · secrets/PII · license · contract), presents a PASS/FLAG/BLOCK verdict, and on the curator's explicit **yes** chains into publish. Live in the catalog now. **Not yet committed.**
+- **UI professional pass** (2026-07-04): reshaped all three templates for a dev-tool register within every DESIGN.md wall. Signature = install command as a real **terminal object** (`.term`: `powershell` bar + `--accent2` `PS>` prompt + green command). Dropped fake `01/02` numbering → mono monogram tiles; added depth (top-highlights, shadows, dot-grid + one hero glow), `/`-to-focus search, new tokens. DESIGN.md rewritten to match. **Not yet committed** (base/index/skill.html + DESIGN.md).
+- **v0.1.0 released** (2026-07-04): first tag; deprecate/yank slice + README + CHANGELOG. Pushed to `github.com/mostlytricks/astra` on branch `main`. (git history / CHANGELOG have the detail.)
 
 ## Current State
-- **v0.1.0 tagged** 2026-07-04 (first release; commit `f9570e5`, annotated tag `v0.1.0`, `CHANGELOG.md` seeded). Not pushed — no remote yet.
+- Remote live: `github.com/mostlytricks/astra`, branch `main`, tag `v0.1.0` pushed. Head is `08cbd6f`; the UI pass sits uncommitted on top.
 - Runs locally: `ASTRA_PUBLISH_TOKEN=dev-local-token .venv/Scripts/python -m uvicorn astra.main:app --port 8300` → http://localhost:8300. Registry: `dashboarding@1.0.0`, `astra-publish@1.0.0` (no live yanks).
-- Gate: `.venv/Scripts/python -m pytest -q` — **26 passed** 2026-07-04. Yank flow also smoke-tested against the real registry (yank→latest 404→pin still serves→unyank restores).
+- Gate: `.venv/Scripts/python -m pytest -q` — **26 passed** 2026-07-04. UI pass render-checked (index/skill/publish all 200, clean log); tests assert content strings, look stays `[review]`.
 - Intranet deployment deferred (user's own task; one-liners auto-adapt to serving host).
 
 ## Next Step
-- User picks next from the queue. Top candidate: teach the `astra-publish` skill a `yank` verb (calls the new API) — but that means publishing a new version of the skill (immutable folder). `later` pool: install-check UI, version history view, download analytics. Future release work: `/cut-release` isn't wired as a skill here — the manual flow (commit feature → CHANGELOG → gate → release commit → tag, stop before push) is the reference.
+- Commit the two uncommitted pieces (UI pass: base/index/skill.html + DESIGN.md · curation gate: registry/astra-curate/). Then real-world test astra-curate by handing it an actual external skill. `later` pool: astra-publish `yank` verb, install-check UI, version history view, download analytics.

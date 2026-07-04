@@ -3,6 +3,7 @@
 **A**gent **S**kill **T**ransfer & **R**egistry **A**pp — an intranet web service where colleagues browse curated agent skills (rendered `SKILL.md` is the sales page), decide to adopt, and install by pasting **one command** — no git, no GitHub, anywhere in the flow.
 
 > **alias:** `astra`
+> gravity: v1.4 — flat two-doc (no `.gravity/`; revisit if registry lifecycle rules outgrow this file)
 
 ---
 
@@ -50,7 +51,7 @@ System tests boot the app against a temp registry (`tests/test_astra.py`) — re
 ## Conventions
 
 - Commit style: imperative one-liner.
-- Skill bundles on disk mirror what Claude Code expects: a folder containing `SKILL.md` (+ optional scripts/assets). The zip served for download is exactly that folder — the rendered page and the artifact are the same bytes.
+- **The bundle contract (canonical owner: this bullet).** A skill = a folder containing `SKILL.md` (+ optional scripts/assets), exactly what Claude Code expects; the zip served for download is that folder byte-for-byte — the rendered page and the artifact are the same bytes. Because adopters run on locked-down Korean-Windows machines, a publishable skill also keeps: **relative paths only, stdlib-only scripts, ASCII-only console output** (cp949 consoles). Skills authored in other projects (e.g. orbit) must be astra-shaped from birth — they link here, never restate this.
 - Versions are immutable once published (a version folder is never edited — publish a new version instead).
 
 ## Constraints & Gotchas
