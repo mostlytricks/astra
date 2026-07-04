@@ -71,7 +71,7 @@ System tests boot the app against a temp registry (`tests/test_astra.py`) — re
 ## Git
 
 - Remote: none yet (local only).
-- Default branch: `master`.
+- Default branch: `main`.
 
 ---
 

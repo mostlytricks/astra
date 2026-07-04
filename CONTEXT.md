@@ -13,9 +13,10 @@ Last touched: 2026-07-04
 - Earlier day-one slices: adoption loop · system core · catalog + rich UI · `latest` alias · DESIGN.md locked. (git history has the detail.)
 
 ## Current State
+- **v0.1.0 tagged** 2026-07-04 (first release; commit `f9570e5`, annotated tag `v0.1.0`, `CHANGELOG.md` seeded). Not pushed — no remote yet.
 - Runs locally: `ASTRA_PUBLISH_TOKEN=dev-local-token .venv/Scripts/python -m uvicorn astra.main:app --port 8300` → http://localhost:8300. Registry: `dashboarding@1.0.0`, `astra-publish@1.0.0` (no live yanks).
 - Gate: `.venv/Scripts/python -m pytest -q` — **26 passed** 2026-07-04. Yank flow also smoke-tested against the real registry (yank→latest 404→pin still serves→unyank restores).
-- No remote. Intranet deployment deferred (user's own task; one-liners auto-adapt to serving host).
+- Intranet deployment deferred (user's own task; one-liners auto-adapt to serving host).
 
 ## Next Step
-- Commit the yank slice (working tree has main.py + both templates + DESIGN.md + tests), then user picks next from the queue. Candidate follow-up: teach the `astra-publish` skill a `yank` verb (calls the new API) — but that means bumping the skill's version (immutable folder). `later` pool: install-check UI, version history view, download analytics.
+- User picks next from the queue. Top candidate: teach the `astra-publish` skill a `yank` verb (calls the new API) — but that means publishing a new version of the skill (immutable folder). `later` pool: install-check UI, version history view, download analytics. Future release work: `/cut-release` isn't wired as a skill here — the manual flow (commit feature → CHANGELOG → gate → release commit → tag, stop before push) is the reference.
