@@ -3,6 +3,27 @@
 All notable changes to astra are recorded here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); astra uses [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Bundle-contract validation** — `validate_bundle()` enforces portability walls
+  adopters depend on: relative-paths-only, ASCII-only console output (cp949 safety),
+  and stdlib-only imports, plus a zip-bomb guard. Publish hard-rejects error findings;
+  `SKILL.md` is exempt from the ASCII rule (it renders as HTML, never prints).
+- **`POST /api/validate`** — an open, token-free dry-run of the bundle contract, so
+  skill authors can self-check a bundle before publishing.
+- **`astra-curate`** — a served curator-only review skill: scores an external skill for
+  agent-safety/prompt-injection, executable safety, secrets, license, and the bundle
+  contract into a PASS/FLAG/BLOCK verdict, then publishes on the curator's explicit yes.
+- **Curator skills v1.1.0** — `astra-publish` gains yank/unyank + a validate dry-run
+  step; `astra-curate` runs `/api/validate` mechanically in its contract check.
+- **Project `.claude/`** — a pytest-runner permission allowlist + a `/serve` command.
+
+### Changed
+- **UI reshaped to a professional dev-tool look** — the install command is now a real
+  terminal object (`PS>` prompt), catalog rows use monogram tiles instead of fake
+  numbering, with added depth and `/`-to-focus search. `DESIGN.md` rewritten to match.
+
 ## [0.1.0] - 2026-07-04
 
 First tagged release — astra is functional on localhost. Intranet deployment

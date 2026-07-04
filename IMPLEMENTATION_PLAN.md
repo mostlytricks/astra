@@ -1,11 +1,11 @@
 # astra — Implementation plan & resume sheet
 
 > One-line working scenario: a colleague finds a skill on the intranet page, pastes one PowerShell command, and the skill runs in their agent — no git involved.
-> Branch `main` · last updated 2026-07-04.
+> Branch `main` · last updated 2026-07-05.
 
 ## Status right now
 
-Five slices shipped 2026-07-04 (adoption loop ✓ demo accepted · system core · catalog + rich UI · `latest` alias · deprecate/yank). Gate is **pytest**, 26 green. The yank slice is in the working tree, not yet committed. Next slice: user's pick — see queue. Intranet deployment (real `http://astra.…` base URL) is the user's own task, later.
+Shipped and released as **v0.1.0** (pushed to `github.com/mostlytricks/astra`), plus the UI professional pass, the `astra-curate` review skill, and **bundle-contract validation** on top. Gate is **pytest**, 34 green. Working tree: the bundle-contract slice (main.py + tests + docs) is uncommitted. Next slice: user's pick — see queue. Intranet deployment (real `http://astra.…` base URL) is the user's own task, later.
 
 ## Slice queue
 
@@ -18,12 +18,11 @@ Rolling lanes (growing project — features accrete, phases would be fake). Rule
 | Lane | Slice | Domain PLAN | Status |
 |---|---|---|---|
 | now | OPEN: user picks the next slice (candidates below) | — | ○ |
-| next | Teach `astra-publish` skill a `yank` verb (calls the new API; needs a skill version bump) | — | ○ |
-| later | Install-verification checklist on the skill page ("does /name appear?") | — | ○ |
+| next | Install-verification checklist on the skill page ("does /name appear?") | — | ○ |
 | later | Version history / changelog view per skill | — | ○ |
 | later | Adoption analytics (download counts — is curation landing?) | — | ○ |
 
-Shipped (details in git history): **adoption loop** (2026-07-04, ✓ demo accepted) · **system core** — JSON API + guarded publish + `astra-publish` skill + pytest wall (2026-07-04) · **catalog + rich UI** — skills.sh-inspired dark UI: base layout + searchable catalog page + detail page with version pills/adopt panel (2026-07-04) · **`latest` alias** — `/skills/{name}/latest` (page redirect, download, API) + latest-tracking install commands on the newest page, pinned on older pages (2026-07-04) · **deprecate/yank** — sidecar `<version>.yanked` marker (bytes untouched), token-guarded `/api/yank`+`/api/unyank`, `latest` skips yanked, page banner + pinned command + marked pills, catalog withdrawn flag (2026-07-04).
+Shipped (details in git history): **adoption loop** (2026-07-04, ✓ demo accepted) · **system core** — JSON API + guarded publish + `astra-publish` skill + pytest wall (2026-07-04) · **catalog + rich UI** — skills.sh-inspired dark UI: base layout + searchable catalog page + detail page with version pills/adopt panel (2026-07-04) · **`latest` alias** — `/skills/{name}/latest` (page redirect, download, API) + latest-tracking install commands on the newest page, pinned on older pages (2026-07-04) · **deprecate/yank** — sidecar `<version>.yanked` marker (bytes untouched), token-guarded `/api/yank`+`/api/unyank`, `latest` skips yanked, page banner + pinned command + marked pills, catalog withdrawn flag (2026-07-04) · **UI professional pass** + **`astra-curate` review skill** (2026-07-04) · **bundle-contract validation** — `validate_bundle()` walls (relative paths · cp949/ASCII console output · stdlib-only heuristic + bomb guard) enforced hard by publish, exposed as open dry-run `POST /api/validate` for author self-check (2026-07-05) · **curator skills v1.1.0** — `astra-publish` gains yank/unyank + a validate dry-run step; `astra-curate` runs `/api/validate` mechanically in its bundle-contract check; both new immutable versions, dogfooded through the validator (2026-07-05).
 
 
 ## Locked decisions
@@ -48,6 +47,6 @@ Shipped (details in git history): **adoption loop** (2026-07-04, ✓ demo accept
 .venv/Scripts/python -m pytest -q
 ```
 
-26 system tests against a temp registry: read surfaces (catalog, detail, `latest` alias/redirect), download byte-identity, every publish wall (token, disabled-without-token, immutability/409, missing SKILL.md, name mismatch, bad name/version, zip-slip, non-zip body), and yank/unyank (hides from latest but keeps pins installable, bytes untouched, api/page flags, fully-yanked catalog state, token wall, unknown-version 404, unyank restores). UI look stays `[review]`.
+34 system tests against a temp registry: read surfaces (catalog, detail, `latest` alias/redirect), download byte-identity, every publish wall (token, disabled-without-token, immutability/409, missing SKILL.md, name mismatch, bad name/version, zip-slip, non-zip body), yank/unyank (hides from latest but keeps pins installable, bytes untouched, api/page flags, fully-yanked catalog state, token wall, unknown-version 404, unyank restores), and the bundle contract (console-nonascii is a publish-blocking error, non-stdlib import is a non-blocking warn, path-traversal rejected, SKILL.md exempt from ASCII, `/api/validate` dry-run needs no token). UI look stays `[review]`.
 
-Last green: 2026-07-04 (26 passed).
+Last green: 2026-07-05 (34 passed).
