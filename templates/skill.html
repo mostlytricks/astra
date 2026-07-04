@@ -27,6 +27,7 @@
   .vpill.cur { border-color: var(--accent2); color: var(--accent2); font-weight: 700;
                background: rgba(180,138,255,.08); }
   .vpill.yanked { text-decoration: line-through; color: var(--faint); opacity: .7; }
+  .vpill.hist { color: var(--faint); border-style: dashed; }
 
   .yank-banner { display: flex; gap: 12px; align-items: baseline;
                  background: rgba(251,191,36,.05); border: 1px solid rgba(251,191,36,.35);
@@ -138,6 +139,7 @@
       {% if v == version %}<span class="vpill cur{{ ' yanked' if yk }}">{{ v }}</span>
       {% else %}<a class="vpill{{ ' yanked' if yk }}" href="/skills/{{ name }}/{{ v }}">{{ v }}</a>{% endif %}
     {% endfor %}
+    {% if versions | length > 1 %}<a class="vpill hist" href="/skills/{{ name }}">history →</a>{% endif %}
   </span>
 </div>
 

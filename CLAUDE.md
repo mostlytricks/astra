@@ -59,14 +59,14 @@ System tests boot the app against a temp registry (`tests/test_astra.py`) — re
 - **Intranet-only; no GitHub.** No dependency on external package indexes at runtime; adopters are on Windows — install commands are PowerShell one-liners. **Pages must load with zero external resources** (no CDN, no web fonts) — see DESIGN.md.
 - **Read is open, publish is guarded.** Anyone on the network browses/downloads; publishing goes through the owner (curator) only, via a token-guarded upload API called by a Claude Code publish skill.
 - Oracle-style workplace secrets discipline applies: the publish token is env-var only, never committed.
-- **Route-ordering trap:** the literal `latest` routes (`/skills/{name}/latest`, `/api/skills/{name}/latest`) must stay registered *before* their `{version}` twins in `main.py`, or `latest` gets parsed as a version string. A test pins this — don't reorder routes casually.
+- **Route-ordering trap:** the literal `latest` routes (`/skills/{name}/latest`, `/api/skills/{name}/latest`) must stay registered *before* their `{version}` twins in `main.py`, or `latest` gets parsed as a version string. A test pins this — don't reorder routes casually. (The version-history routes `/skills/{name}` and `/api/skills/{name}` are *single-segment*, so they never collide with the two-segment `{version}` paths — a different, safe case.)
 - Line endings: files are LF in the repo; git prints CRLF warnings on Windows — harmless, ignore them.
 
 ## Entry Points
 
-- `astra/main.py` — FastAPI app: HTML pages (index, skill detail, zip download) + JSON API (`/api/skills`, `/api/skills/{name}/{version}`, guarded `POST /api/publish`, guarded `POST /api/yank`+`/api/unyank`, open dry-run `POST /api/validate`). `validate_bundle()` is the shared **bundle-contract wall** (paths · cp949/ASCII console · stdlib-only): publish enforces its errors, validate reports them, `astra-curate` calls it.
+- `astra/main.py` — FastAPI app: HTML pages (index, skill detail, version history, zip download) + JSON API (`/api/skills`, `/api/skills/{name}` version timeline, `/api/skills/{name}/{version}`, guarded `POST /api/publish`, guarded `POST /api/yank`+`/api/unyank`, open dry-run `POST /api/validate`). `validate_bundle()` is the shared **bundle-contract wall** (paths · cp949/ASCII console · stdlib-only): publish enforces its errors, validate reports them, `astra-curate` calls it.
 - `registry/` — the on-disk registry (`<skill>/<version>/SKILL.md` …). **The architectural seam:** every surface (page, zip, API, install command) derives from this one folder shape — no second source of truth. The curator's own skills — `astra-publish` (publish) and `astra-curate` (review gate) — are served like any other.
-- `templates/` — Jinja2 pages: `base.html` owns the shared theme + header/footer (all pages extend it; tokens documented in DESIGN.md); `index.html` = catalog, `skill.html` = detail.
+- `templates/` — Jinja2 pages: `base.html` owns the shared theme + header/footer (all pages extend it; tokens documented in DESIGN.md); `index.html` = catalog, `skill.html` = detail, `history.html` = per-skill version timeline.
 - `tests/test_astra.py` — the gate.
 
 ## Git

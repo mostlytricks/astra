@@ -132,6 +132,41 @@ def test_latest_alias_404s_for_unknown_skill(client):
     assert client.get("/api/skills/nope/latest").status_code == 404
 
 
+def test_history_page_lists_all_versions(client):
+    z = make_zip({"SKILL.md": SKILL_MD.format(name="demo", description="the v2 line")})
+    assert publish(client, "demo", "1.10.0", z).status_code == 201
+    html = client.get("/skills/demo").text
+    assert "version history" in html.lower()
+    assert "1.10.0" in html and "1.0.0" in html  # every immutable version shown
+    assert "the v2 line" in html                 # per-version description
+
+
+def test_history_api_returns_timeline(client):
+    z = make_zip({"SKILL.md": SKILL_MD.format(name="demo", description="v2")})
+    publish(client, "demo", "1.10.0", z)
+    data = client.get("/api/skills/demo").json()
+    assert data["latest"] == "1.10.0"
+    assert data["versions"] == ["1.0.0", "1.10.0"]              # ascending
+    assert [r["version"] for r in data["releases"]] == ["1.10.0", "1.0.0"]  # newest-first
+    assert data["releases"][0]["is_latest"] is True
+
+
+def test_history_reflects_yank(client):
+    z = make_zip({"SKILL.md": SKILL_MD.format(name="demo", description="v2")})
+    publish(client, "demo", "1.10.0", z)
+    yank(client, "demo", "1.10.0", reason="pulled")
+    data = client.get("/api/skills/demo").json()
+    assert data["latest"] == "1.0.0"  # yanked drops out of latest
+    top = data["releases"][0]
+    assert top["version"] == "1.10.0" and top["yanked"] is True  # still in the timeline
+    assert "withdrawn" in client.get("/skills/demo").text
+
+
+def test_history_404s_for_unknown_skill(client):
+    assert client.get("/skills/nope").status_code == 404
+    assert client.get("/api/skills/nope").status_code == 404
+
+
 def test_unknown_skill_404s(client):
     assert client.get("/skills/nope/1.0.0").status_code == 404
     assert client.get("/api/skills/nope/1.0.0").status_code == 404

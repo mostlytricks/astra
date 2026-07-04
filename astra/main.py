@@ -251,6 +251,20 @@ def api_skills():
     return {"skills": catalog()}
 
 
+@app.get("/api/skills/{name}")
+def api_skill_history(name: str):
+    """The version timeline for one skill (single-segment path — declared before
+    the /{name}/latest and /{name}/{version} twins, which have an extra segment)."""
+    releases = skill_releases(name)
+    live = [r["version"] for r in releases if not r["yanked"]]
+    return {
+        "name": name,
+        "latest": live[0] if live else None,   # releases are newest-first
+        "versions": [r["version"] for r in reversed(releases)],  # ascending
+        "releases": releases,
+    }
+
+
 @app.get("/api/skills/{name}/latest")
 def api_skill_latest(name: str):
     return api_skill(name, resolve_latest(name))
@@ -371,6 +385,30 @@ def resolve_latest(name: str) -> str:
     return live[-1]
 
 
+def skill_releases(name: str) -> list[dict]:
+    """Every published version of a skill, newest first — the immutable timeline.
+    Each version carries its own metadata (descriptions can change across versions)."""
+    versions = list_registry().get(name)
+    if not versions:
+        raise HTTPException(status_code=404, detail=f"no skill named {name}")
+    reasons = yanked_versions(name)
+    live = [v for v in versions if v not in reasons]
+    newest_live = live[-1] if live else None
+    out = []
+    for v in reversed(versions):
+        d = REGISTRY / name / v
+        meta, _ = parse_skill_md(d / "SKILL.md")
+        out.append({
+            "version": v,
+            "description": meta.get("description", ""),
+            "files": sum(1 for p in d.rglob("*") if p.is_file()),
+            "yanked": v in reasons,
+            "yank_reason": reasons.get(v, ""),
+            "is_latest": v == newest_live,
+        })
+    return out
+
+
 # "latest" alias routes — declared BEFORE the {version} routes so the literal
 # path wins; a shared install command keeps working across version bumps
 @app.get("/skills/{name}/latest", response_class=HTMLResponse)
@@ -381,6 +419,18 @@ def skill_page_latest(name: str):
 @app.get("/skills/{name}/latest/download")
 def skill_download_latest(name: str):
     return skill_download(name, resolve_latest(name))
+
+
+# the version-history page — single-segment /skills/{name}, so it never collides
+# with the two-segment /skills/{name}/{version} sales page below
+@app.get("/skills/{name}", response_class=HTMLResponse)
+def skill_history_page(request: Request, name: str):
+    releases = skill_releases(name)
+    return templates.TemplateResponse(request, "history.html", {
+        "name": name,
+        "releases": releases,
+        "count": len(releases),
+    })
 
 
 @app.get("/skills/{name}/{version}", response_class=HTMLResponse)

@@ -106,7 +106,7 @@
     </div>
     <div class="side">
       {% if s.fully_yanked %}<span class="chip warn">withdrawn</span>{% endif %}
-      <span class="chip">{{ s.versions | length }} version{{ 's' if s.versions | length != 1 }}</span>
+      <a class="chip" href="/skills/{{ s.name }}" title="version history">{{ s.versions | length }} version{{ 's' if s.versions | length != 1 }}</a>
       <a class="adopt-link" href="/skills/{{ s.name }}/{{ s.latest }}">adopt <span class="arw">→</span></a>
     </div>
   </div>

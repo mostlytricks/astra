@@ -21,6 +21,9 @@ All notable changes to astra are recorded here. Format follows
 - **Install-verification checklist** on the skill page — a numbered "did it install?"
   sequence (no errors → `SKILL.md` on disk → `/name` appears → restart and retry) that
   closes the adoption feedback loop.
+- **Version history view** — `GET /skills/{name}` renders a per-skill timeline of every
+  immutable version (newest first, with per-version description, file count, latest/withdrawn
+  badges); `GET /api/skills/{name}` is the JSON twin. Linked from the catalog and skill pages.
 
 ### Changed
 - **UI reshaped to a professional dev-tool look** — the install command is now a real

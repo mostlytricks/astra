@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} — version history — astra{% endblock %}
+
+{% block style %}
+  .crumb { color: var(--faint); font-size: 12.5px; margin-bottom: 24px; font-family: var(--mono);
+           display: flex; gap: 7px; align-items: center; }
+  .crumb a { color: var(--dim); }
+  .crumb .sep { color: var(--mute); }
+
+  .hhead { display: flex; gap: 18px; align-items: center; margin-bottom: 6px; }
+  .hhead .mono-tile { flex: none; width: 48px; height: 48px; border-radius: 11px;
+                      display: grid; place-items: center; font-family: var(--mono); font-weight: 700;
+                      font-size: 17px; color: var(--accent); text-transform: lowercase;
+                      background: linear-gradient(160deg, var(--card2), var(--card));
+                      border: 1px solid var(--line2); }
+  .hhead h1 { margin: 0; font-size: 28px; letter-spacing: -.6px; font-weight: 800; }
+  .hhead h1 span { color: var(--dim); font-weight: 400; }
+  .lede { color: var(--dim); font-size: 14px; margin: 0 0 34px; max-width: 620px; }
+  .lede b { color: var(--ink); }
+
+  /* the timeline — a rail with a dot per immutable release, newest at top */
+  .timeline { position: relative; margin-left: 7px; padding-left: 28px;
+              border-left: 1px solid var(--line2); }
+  .rev { position: relative; padding: 0 0 26px; }
+  .rev:last-child { padding-bottom: 4px; }
+  .rev::before { content: ''; position: absolute; left: -35px; top: 4px; width: 13px; height: 13px;
+                 border-radius: 50%; background: var(--bg); border: 2px solid var(--line3); }
+  .rev.latest::before { border-color: var(--accent2); background: var(--accent2);
+                        box-shadow: 0 0 12px rgba(180,138,255,.5); }
+  .rev.yanked::before { border-color: var(--warn); background: var(--bg); }
+
+  .rev .line1 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .rev .ver { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--accent2); }
+  .rev.yanked .ver { text-decoration: line-through; color: var(--faint); }
+  .rev .badge { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+                letter-spacing: 1px; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--line2);
+                color: var(--dim); }
+  .rev .badge.latest { color: var(--accent2); border-color: var(--accent2); }
+  .rev .badge.withdrawn { color: var(--warn); border-color: rgba(251,191,36,.4); }
+  .rev p { margin: 0 0 8px; color: var(--dim); font-size: 14px; line-height: 1.5; max-width: 620px; }
+  .rev .reason { color: var(--warn); font-size: 12.5px; font-family: var(--mono); margin: 0 0 8px; }
+  .rev .links { display: flex; gap: 8px; align-items: center; font-family: var(--mono); font-size: 12.5px; }
+  .rev .links a { color: var(--accent); }
+  .rev .links .files { color: var(--faint); }
+  .rev .links .dot { color: var(--mute); }
+{% endblock %}
+
+{% block content %}
+<div class="crumb"><a href="/">skills</a> <span class="sep">/</span> {{ name }}
+  <span class="sep">/</span> <span style="color:var(--dim)">history</span></div>
+
+<div class="hhead">
+  <div class="mono-tile">{{ name[:2] }}</div>
+  <h1>{{ name }} <span>· version history</span></h1>
+</div>
+<p class="lede">{{ count }} published version{{ 's' if count != 1 }}. Every one is <b>permanent</b> —
+   astra never edits or deletes a release. A withdrawn version is flagged, not removed, so anyone
+   pinned to it keeps working.</p>
+
+<div class="timeline">
+  {% for r in releases %}
+  <div class="rev {{ 'latest' if r.is_latest }} {{ 'yanked' if r.yanked }}">
+    <div class="line1">
+      <span class="ver">v{{ r.version }}</span>
+      {% if r.is_latest %}<span class="badge latest">latest</span>{% endif %}
+      {% if r.yanked %}<span class="badge withdrawn">withdrawn</span>{% endif %}
+    </div>
+    <p>{{ r.description }}</p>
+    {% if r.yanked and r.yank_reason %}<p class="reason">reason: {{ r.yank_reason }}</p>{% endif %}
+    <div class="links">
+      <a href="/skills/{{ name }}/{{ r.version }}">view</a>
+      <span class="dot">·</span>
+      <a href="/skills/{{ name }}/{{ r.version }}/download">download</a>
+      <span class="dot">·</span>
+      <span class="files">{{ r.files }} file{{ 's' if r.files != 1 }}</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
