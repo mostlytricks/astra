@@ -2,56 +2,86 @@
 {% block title %}{{ name }} v{{ version }} — astra{% endblock %}
 
 {% block style %}
-  .crumb { color: var(--faint); font-size: 13px; margin-bottom: 26px; font-family: var(--mono); }
+  .crumb { color: var(--faint); font-size: 12.5px; margin-bottom: 24px; font-family: var(--mono);
+           display: flex; gap: 7px; align-items: center; }
   .crumb a { color: var(--dim); }
+  .crumb .sep { color: var(--mute); }
 
-  .head h1 { margin: 0 0 6px; font-size: 34px; letter-spacing: -.8px; display: flex;
-             align-items: baseline; gap: 12px; flex-wrap: wrap; }
-  .head h1 .ver { color: var(--accent2); font-size: 19px; font-family: var(--mono); font-weight: 400; }
-  .desc { color: var(--dim); margin: 0 0 18px; max-width: 680px; font-size: 15.5px; }
+  .head { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 22px; }
+  .head .mono-tile { flex: none; width: 54px; height: 54px; border-radius: 12px;
+                     display: grid; place-items: center; font-family: var(--mono); font-weight: 700;
+                     font-size: 19px; color: var(--accent); text-transform: lowercase;
+                     background: linear-gradient(160deg, var(--card2), var(--card));
+                     border: 1px solid var(--line2); }
+  .head h1 { margin: 0 0 6px; font-size: 32px; letter-spacing: -.8px; font-weight: 800;
+             display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .head h1 .ver { color: var(--accent2); font-size: 17px; font-family: var(--mono); font-weight: 500; }
+  .desc { color: var(--dim); margin: 0; max-width: 660px; font-size: 15.5px; line-height: 1.55; }
 
-  .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 34px; }
+  .meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin: 0 0 30px; }
+  .meta .vsep { width: 1px; height: 18px; background: var(--line2); margin: 0 4px; }
   .vpills { display: inline-flex; gap: 6px; align-items: center; }
-  .vpill { font-family: var(--mono); font-size: 12px; padding: 2px 10px; border-radius: 99px;
+  .vpill { font-family: var(--mono); font-size: 11.5px; padding: 3px 10px; border-radius: 7px;
            border: 1px solid var(--line); color: var(--dim); }
   a.vpill:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
-  .vpill.cur { border-color: var(--accent2); color: var(--accent2); font-weight: 700; }
-  .vpill.yanked { text-decoration: line-through; color: var(--faint); opacity: .75; }
+  .vpill.cur { border-color: var(--accent2); color: var(--accent2); font-weight: 700;
+               background: rgba(180,138,255,.08); }
+  .vpill.yanked { text-decoration: line-through; color: var(--faint); opacity: .7; }
 
   .yank-banner { display: flex; gap: 12px; align-items: baseline;
-                 background: var(--card); border: 1px solid var(--warn);
-                 border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
-  .yank-banner .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase;
-                      letter-spacing: 1.5px; color: var(--warn); font-weight: 700; white-space: nowrap; }
-  .yank-banner .msg { color: var(--dim); font-size: 14px; }
+                 background: rgba(251,191,36,.05); border: 1px solid rgba(251,191,36,.35);
+                 border-radius: 12px; padding: 15px 18px; margin-bottom: 26px; }
+  .yank-banner .tag { font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+                      letter-spacing: 1.5px; color: var(--warn); font-weight: 700; white-space: nowrap;
+                      border: 1px solid rgba(251,191,36,.4); border-radius: 5px; padding: 2px 8px; }
+  .yank-banner .msg { color: var(--dim); font-size: 13.5px; line-height: 1.55; }
   .yank-banner .msg b { color: var(--ink); }
 
-  .adopt { background: linear-gradient(160deg, var(--panel), var(--card));
-           border: 1px solid var(--line2); border-radius: 14px; padding: 26px; margin-bottom: 44px;
-           position: relative; overflow: hidden; }
-  .adopt::before { content: '✦'; position: absolute; right: -10px; top: -34px; font-size: 130px;
-                   color: var(--accent2); opacity: .06; pointer-events: none; }
-  .adopt h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase;
+  /* the adopt panel — the hero; nothing competes with the command */
+  .adopt { background:
+             radial-gradient(600px 200px at 12% -40px, rgba(138,180,255,.08), transparent 70%),
+             linear-gradient(165deg, var(--panel), var(--card));
+           border: 1px solid var(--line2); border-radius: 16px; padding: 24px 24px 22px;
+           margin-bottom: 46px; position: relative; overflow: hidden;
+           box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 16px 44px rgba(0,0,0,.34); }
+  .adopt::after { content: '✦'; position: absolute; right: -14px; top: -40px; font-size: 150px;
+                  color: var(--accent2); opacity: .05; pointer-events: none; }
+  .adopt-head { display: flex; align-items: baseline; justify-content: space-between;
+                gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .adopt h2 { margin: 0; font-size: 13px; text-transform: uppercase;
               letter-spacing: 2.5px; color: var(--accent); }
-  .adopt .sub { margin: 0 0 16px; color: var(--dim); font-size: 13.5px; }
-  .adopt .step { display: flex; gap: 12px; margin-top: 16px; font-size: 13.5px; color: var(--dim);
-                 align-items: baseline; }
-  .adopt .step .n { font-family: var(--mono); color: var(--accent2); font-weight: 700; }
-  .adopt .step code { color: var(--ok); font-family: var(--mono); font-size: 12.5px; }
-  .adopt .alt a { font-weight: 600; }
+  .adopt .track { font-family: var(--mono); font-size: 11px; letter-spacing: .5px;
+                  color: var(--faint); }
+  .adopt .track b { color: var(--ok); }
+  .adopt .track.pinned b { color: var(--accent2); }
+  .adopt .sub { margin: 0 0 16px; color: var(--dim); font-size: 13.5px; line-height: 1.5; max-width: 620px; }
+  .adopt .sub b { color: var(--ink); }
 
-  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 2.5px;
-                   color: var(--faint); margin: 0 0 16px; padding-bottom: 10px;
-                   border-bottom: 1px solid var(--line); }
+  .adopt .after { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 16px;
+                  font-size: 13px; color: var(--dim); }
+  .adopt .after .n { font-family: var(--mono); color: var(--accent2); font-weight: 700;
+                     margin-right: 8px; }
+  .adopt .after code { color: var(--ink); font-family: var(--mono); font-size: 12.5px;
+                       background: var(--card2); border: 1px solid var(--line); border-radius: 5px;
+                       padding: 1px 6px; }
+
+  .section-title { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase;
+                   letter-spacing: 2.2px; color: var(--faint); margin: 0 0 18px;
+                   padding-bottom: 10px; border-bottom: 1px solid var(--line);
+                   display: flex; align-items: center; gap: 9px; }
+  .section-title .star { color: var(--accent2); }
+
   .spec { max-width: 760px; }
-  .spec h1 { font-size: 26px; letter-spacing: -.5px; margin-top: 0; }
-  .spec h2 { font-size: 19px; letter-spacing: -.3px; margin-top: 36px;
+  .spec h1 { font-size: 25px; letter-spacing: -.5px; margin-top: 0; }
+  .spec h2 { font-size: 19px; letter-spacing: -.3px; margin-top: 34px;
              padding-bottom: 8px; border-bottom: 1px solid var(--line); }
   .spec h3 { font-size: 16px; }
   .spec p, .spec li { color: #c6cddf; }
   .spec strong { color: var(--ink); }
-  .spec pre { background: #05060a; border: 1px solid var(--line); border-radius: 10px;
-              padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.55; }
+  .spec a { text-decoration: underline; text-underline-offset: 2px; }
+  .spec pre { background: #04050a; border: 1px solid var(--line2); border-radius: 10px;
+              padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+              box-shadow: inset 0 1px 0 rgba(255,255,255,.03); }
   .spec code { font-family: var(--mono); font-size: .9em; color: #b8c7f0; }
   .spec :not(pre) > code { background: var(--card); border: 1px solid var(--line);
                            border-radius: 5px; padding: 1px 6px; }
@@ -62,28 +92,37 @@
 
   .files { margin-top: 50px; }
   .files ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .files li { font-family: var(--mono); font-size: 12.5px; color: var(--dim);
-              background: var(--card); border: 1px solid var(--line); border-radius: 6px;
-              padding: 4px 12px; }
+  .files li { font-family: var(--mono); font-size: 12px; color: var(--dim);
+              background: var(--card); border: 1px solid var(--line); border-radius: 7px;
+              padding: 5px 12px; transition: border-color .14s, color .14s; }
+  .files li:hover { border-color: var(--line2); color: var(--ink); }
+
+  @media (max-width: 620px) { .head h1 { font-size: 26px; } .head .mono-tile { display: none; } }
 {% endblock %}
 
 {% block content %}
-<div class="crumb"><a href="/">skills</a> / {{ name }} / v{{ version }}</div>
+<div class="crumb"><a href="/">skills</a> <span class="sep">/</span> {{ name }}
+  <span class="sep">/</span> <span style="color:var(--dim)">v{{ version }}</span></div>
 
 <div class="head">
-  <h1>{{ name }} <span class="ver">v{{ version }}</span></h1>
-  <p class="desc">{{ description }}</p>
-  <div class="meta">
-    <span class="chip">target <b>Claude Code</b></span>
-    <span class="chip">files <b>{{ files | length }}</b></span>
-    <span class="vpills">
-      {% for v in versions %}
-        {% set yk = v in yanked_versions %}
-        {% if v == version %}<span class="vpill cur{{ ' yanked' if yk }}">{{ v }}</span>
-        {% else %}<a class="vpill{{ ' yanked' if yk }}" href="/skills/{{ name }}/{{ v }}">{{ v }}</a>{% endif %}
-      {% endfor %}
-    </span>
+  <div class="mono-tile">{{ name[:2] }}</div>
+  <div>
+    <h1>{{ name }} <span class="ver">v{{ version }}</span></h1>
+    <p class="desc">{{ description }}</p>
   </div>
+</div>
+
+<div class="meta">
+  <span class="chip">target <b>Claude Code</b></span>
+  <span class="chip">{{ files | length }} file{{ 's' if files | length != 1 }}</span>
+  <span class="vsep"></span>
+  <span class="vpills">
+    {% for v in versions %}
+      {% set yk = v in yanked_versions %}
+      {% if v == version %}<span class="vpill cur{{ ' yanked' if yk }}">{{ v }}</span>
+      {% else %}<a class="vpill{{ ' yanked' if yk }}" href="/skills/{{ name }}/{{ v }}">{{ v }}</a>{% endif %}
+    {% endfor %}
+  </span>
 </div>
 
 {% if yanked %}
@@ -98,23 +137,29 @@
 {% endif %}
 
 <div class="adopt">
-  <h2>Adopt this skill</h2>
-  <p class="sub">One paste in PowerShell — installs to your personal skills folder. No git, no accounts.
+  <div class="adopt-head">
+    <h2>Adopt this skill</h2>
+    {% if is_latest %}<span class="track">tracks <b>latest</b></span>
+    {% else %}<span class="track pinned">pinned to <b>v{{ version }}</b></span>{% endif %}
+  </div>
+  <p class="sub">One paste in PowerShell installs it to your personal skills folder — no git, no accounts.
     {% if is_latest %}This command <b>tracks latest</b>: the same paste later installs whatever is newest.
     {% elif yanked %}This command is <b>pinned to v{{ version }}</b> — a withdrawn release.{% if newest_live %} Latest is v{{ newest_live }}.{% endif %}
     {% else %}This command is <b>pinned to v{{ version }}</b> — an older release; latest is v{{ newest_live or versions[-1] }}.{% endif %}</p>
-  <div class="cmd-block">
-    <div class="cmd" id="cmd">{{ install_cmd }}</div>
-    <button class="copy" onclick="copyText(this, 'cmd')">Copy</button>
+
+  <div class="term">
+    <div class="term-bar"><span class="shell">powershell</span>
+      <button class="copy" onclick="copyText(this, 'cmd')">copy</button></div>
+    <div class="term-body"><span class="prompt">PS&gt;</span><span class="code" id="cmd">{{ install_cmd }}</span></div>
   </div>
-  <div class="step"><span class="n">check</span>
-    <span>open Claude Code and type <code>{{ install_check }}</code> — it should appear as a command.</span></div>
-  <div class="step alt"><span class="n">or</span>
-    <span><a href="{{ download_url }}">download {{ name }}-{{ version }}.zip</a> and unzip into
-    <code>%USERPROFILE%\.claude\skills\{{ name }}\</code></span></div>
+
+  <div class="after">
+    <span><span class="n">check</span>open Claude Code and type <code>{{ install_check }}</code> — it should appear as a command.</span>
+    <span><span class="n">or</span><a href="{{ download_url }}">download {{ name }}-{{ version }}.zip</a> and unzip into <code>%USERPROFILE%\.claude\skills\{{ name }}\</code></span>
+  </div>
 </div>
 
-<div class="section-title">Skill specification — exactly what your agent will load</div>
+<div class="section-title"><span class="star">✦</span> Skill specification — exactly what your agent will load</div>
 <div class="spec">{{ body_html | safe }}</div>
 
 <div class="files">
