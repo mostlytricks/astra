@@ -65,6 +65,22 @@
                        background: var(--card2); border: 1px solid var(--line); border-radius: 5px;
                        padding: 1px 6px; }
 
+  /* install-verification — a real sequence, so numbering earns its place here */
+  .verify { max-width: 720px; margin-bottom: 46px; }
+  .checklist { list-style: none; counter-reset: step; margin: 0; padding: 0;
+               display: flex; flex-direction: column; gap: 11px; }
+  .checklist li { counter-increment: step; position: relative; padding-left: 40px;
+                  color: var(--dim); font-size: 14px; line-height: 1.55; }
+  .checklist li::before { content: counter(step); position: absolute; left: 0; top: -2px;
+                          width: 25px; height: 25px; border-radius: 7px; display: grid;
+                          place-items: center; font-family: var(--mono); font-size: 12px;
+                          font-weight: 700; color: var(--accent2); background: var(--card2);
+                          border: 1px solid var(--line2); }
+  .checklist li b { color: var(--ink); }
+  .checklist code { font-family: var(--mono); font-size: 12.5px; color: #b8c7f0;
+                    background: var(--card); border: 1px solid var(--line); border-radius: 5px;
+                    padding: 1px 6px; }
+
   .section-title { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase;
                    letter-spacing: 2.2px; color: var(--faint); margin: 0 0 18px;
                    padding-bottom: 10px; border-bottom: 1px solid var(--line);
@@ -154,9 +170,19 @@
   </div>
 
   <div class="after">
-    <span><span class="n">check</span>open Claude Code and type <code>{{ install_check }}</code> — it should appear as a command.</span>
     <span><span class="n">or</span><a href="{{ download_url }}">download {{ name }}-{{ version }}.zip</a> and unzip into <code>%USERPROFILE%\.claude\skills\{{ name }}\</code></span>
   </div>
+</div>
+
+<div class="verify">
+  <div class="section-title"><span class="star">✦</span> After you paste — did it install?</div>
+  <ol class="checklist">
+    <li>The command finished with <b>no red errors</b> — <code>Expand-Archive</code> wrote the folder.</li>
+    <li>The skill is on disk with its spec — run
+        <code>dir "%USERPROFILE%\.claude\skills\{{ name }}"</code> and confirm <code>SKILL.md</code> is listed.</li>
+    <li>Open Claude Code and type <code>{{ install_check }}</code> — it appears as a command.</li>
+    <li><b>Not showing?</b> Restart Claude Code (skills load at startup), then try step 3 again.</li>
+  </ol>
 </div>
 
 <div class="section-title"><span class="star">✦</span> Skill specification — exactly what your agent will load</div>

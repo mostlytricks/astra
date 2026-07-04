@@ -18,6 +18,9 @@ All notable changes to astra are recorded here. Format follows
 - **Curator skills v1.1.0** — `astra-publish` gains yank/unyank + a validate dry-run
   step; `astra-curate` runs `/api/validate` mechanically in its contract check.
 - **Project `.claude/`** — a pytest-runner permission allowlist + a `/serve` command.
+- **Install-verification checklist** on the skill page — a numbered "did it install?"
+  sequence (no errors → `SKILL.md` on disk → `/name` appears → restart and retry) that
+  closes the adoption feedback loop.
 
 ### Changed
 - **UI reshaped to a professional dev-tool look** — the install command is now a real

@@ -91,6 +91,13 @@ def test_detail_page_renders(client):
     assert "Expand-Archive" in html  # the install one-liner is on the page
 
 
+def test_detail_page_has_install_verification(client):
+    html = client.get("/skills/demo/1.0.0").text
+    assert "did it install" in html.lower()       # the verification checklist
+    assert "Restart Claude Code" in html          # the troubleshooting step
+    assert "/demo" in html                         # the /name appears-as-command check
+
+
 def test_download_roundtrip_is_byte_identical(client):
     r = client.get("/skills/demo/1.0.0/download")
     zf = zipfile.ZipFile(io.BytesIO(r.content))

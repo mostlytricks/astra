@@ -58,6 +58,9 @@ implementation. Change both together or neither.
 - **Version pills** (`.vpill`): current = `--accent2`; others link; yanked = line-through
   `--faint`. Immutability + withdrawal made visible.
 - **Section titles**: mono 11.5px uppercase, letter-spacing 2.2px, `--faint`, ✦ lead, bottom border.
+- **Checklist** (`.checklist`, skill page): a numbered `<ol>` with mono step chips — the
+  *sanctioned* use of numbering, because install-verification is a real ordered sequence
+  (unlike the catalog). Sits below the adopt panel; never competes with the command.
 - **`kbd`**: keycap for shortcut hints (the `/` in search). Depth via a 2px bottom border.
 - **Depth kit**: panels carry a 1px top highlight (`inset 0 1px 0 rgba(255,255,255,.04)`)
   and a soft drop shadow on hover/hero. The page has a fixed faint dot-grid and one radial

@@ -9,15 +9,16 @@
 Last touched: 2026-07-05
 
 ## Completed
-- **Curator skills → v1.1.0** (2026-07-05): taught them the new walls. `astra-publish` 1.1.0 adds yank/unyank + a `/api/validate` dry-run step; `astra-curate` 1.1.0 runs `/api/validate` mechanically in its bundle-contract check (was eyeballed). New immutable versions (1.0.0 kept), both dogfooded through the validator (ok=true). Registry folders uncommitted.
-- **Bundle-contract validation** (2026-07-05, committed `ad57635`): `validate_bundle()` enforces relative-paths / cp949-ASCII console (error) / stdlib-only (warn) + bomb guard; publish hard-rejects errors; open dry-run `POST /api/validate` for self-check. 34 tests green.
+- **Install-verification checklist** (2026-07-05): a numbered "did it install?" sequence on the skill page below the adopt panel (no-errors → `SKILL.md` on disk → `/name` appears → restart-and-retry). Closes the adoption feedback loop; numbering is legit here (real sequence). 35 tests green.
+- **Curator skills → v1.1.0** (2026-07-05, committed `036c2b2`): `astra-publish` 1.1.0 adds yank/unyank + a `/api/validate` dry-run; `astra-curate` 1.1.0 runs `/api/validate` mechanically. 1.0.0 kept; both dogfooded.
+- **Bundle-contract validation** (2026-07-05, committed `ad57635`): `validate_bundle()` walls (paths/cp949-ASCII = error, stdlib = warn) + open `POST /api/validate`.
 - **v0.1.0 released** (2026-07-04): first tag; deprecate/yank slice + README + CHANGELOG. Pushed to `github.com/mostlytricks/astra` on branch `main`. (git history / CHANGELOG have the detail.)
 
 ## Current State
-- Remote live: `github.com/mostlytricks/astra`, branch `main`, tag `v0.1.0` pushed. Bundle-contract committed (`ad57635`); the v1.1.0 curator-skill folders are the only uncommitted change.
+- Remote live: `github.com/mostlytricks/astra`, branch `main`, tag `v0.1.0`. `[Unreleased]` in CHANGELOG holds everything since (UI, astra-curate, .claude, bundle-contract, curator v1.1.0, install-verification) — evidence points to a **minor bump → v0.2.0**; the user cuts it when ready.
 - Runs locally via `/serve` or: `ASTRA_PUBLISH_TOKEN=dev-local-token .venv/Scripts/python -m uvicorn astra.main:app --port 8300`. Registry: `dashboarding@1.0.0`, `astra-publish@1.1.0`, `astra-curate@1.1.0` (1.0.0 of each kept; no live yanks). Server up on 8300.
-- Gate: `.venv/Scripts/python -m pytest -q` — **34 passed** 2026-07-05. `/api/validate` also live-verified (bad bundle → ok=false, console-nonascii error + nonstdlib-import warn).
+- Gate: `.venv/Scripts/python -m pytest -q` — **35 passed** 2026-07-05.
 - Intranet deployment deferred (user's own task; one-liners auto-adapt to serving host).
 
 ## Next Step
-- User cuts a release next (their call). After that, `next` lane = install-verification checklist on the skill page ("does /name appear?"). `later`: version history view, download analytics.
+- `next` lane = version history / changelog view per skill (surface the immutable version timeline). `later`: adoption analytics (download counts). User cuts v0.2.0 whenever they're ready — tree is release-clean.
