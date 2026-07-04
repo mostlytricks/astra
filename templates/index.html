@@ -36,6 +36,7 @@
   .row .side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
                white-space: nowrap; padding-top: 2px; }
   .row .adopt-link { font-size: 13px; font-weight: 600; }
+  .chip.warn { border-color: var(--warn); color: var(--warn); }
   .empty { text-align: center; color: var(--faint); padding: 50px 0; display: none; }
 {% endblock %}
 
@@ -62,6 +63,7 @@
       <p>{{ s.description }}</p>
     </div>
     <div class="side">
+      {% if s.fully_yanked %}<span class="chip warn">withdrawn</span>{% endif %}
       <span class="chip">{{ s.versions | length }} version{{ 's' if s.versions | length != 1 }}</span>
       <a class="adopt-link" href="/skills/{{ s.name }}/{{ s.latest }}">Adopt →</a>
     </div>

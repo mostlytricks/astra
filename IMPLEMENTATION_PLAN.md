@@ -5,7 +5,7 @@
 
 ## Status right now
 
-Four slices shipped 2026-07-04 (adoption loop ✓ demo accepted · system core · catalog + rich UI · `latest` alias). First commit `4ded61e` covers the first three; the `latest` slice is committed on top. Gate is **pytest**, 18 green. Next slice: user's pick — see queue. Intranet deployment (real `http://astra.…` base URL) is the user's own task, later.
+Five slices shipped 2026-07-04 (adoption loop ✓ demo accepted · system core · catalog + rich UI · `latest` alias · deprecate/yank). Gate is **pytest**, 26 green. The yank slice is in the working tree, not yet committed. Next slice: user's pick — see queue. Intranet deployment (real `http://astra.…` base URL) is the user's own task, later.
 
 ## Slice queue
 
@@ -18,12 +18,12 @@ Rolling lanes (growing project — features accrete, phases would be fake). Rule
 | Lane | Slice | Domain PLAN | Status |
 |---|---|---|---|
 | now | OPEN: user picks the next slice (candidates below) | — | ○ |
-| next | Deprecate/yank support (mark a version withdrawn without breaking immutability) | — | ○ |
+| next | Teach `astra-publish` skill a `yank` verb (calls the new API; needs a skill version bump) | — | ○ |
 | later | Install-verification checklist on the skill page ("does /name appear?") | — | ○ |
 | later | Version history / changelog view per skill | — | ○ |
 | later | Adoption analytics (download counts — is curation landing?) | — | ○ |
 
-Shipped (details in git history): **adoption loop** (2026-07-04, ✓ demo accepted) · **system core** — JSON API + guarded publish + `astra-publish` skill + pytest wall (2026-07-04) · **catalog + rich UI** — skills.sh-inspired dark UI: base layout + searchable catalog page + detail page with version pills/adopt panel (2026-07-04) · **`latest` alias** — `/skills/{name}/latest` (page redirect, download, API) + latest-tracking install commands on the newest page, pinned on older pages (2026-07-04).
+Shipped (details in git history): **adoption loop** (2026-07-04, ✓ demo accepted) · **system core** — JSON API + guarded publish + `astra-publish` skill + pytest wall (2026-07-04) · **catalog + rich UI** — skills.sh-inspired dark UI: base layout + searchable catalog page + detail page with version pills/adopt panel (2026-07-04) · **`latest` alias** — `/skills/{name}/latest` (page redirect, download, API) + latest-tracking install commands on the newest page, pinned on older pages (2026-07-04) · **deprecate/yank** — sidecar `<version>.yanked` marker (bytes untouched), token-guarded `/api/yank`+`/api/unyank`, `latest` skips yanked, page banner + pinned command + marked pills, catalog withdrawn flag (2026-07-04).
 
 
 ## Locked decisions
@@ -48,6 +48,6 @@ Shipped (details in git history): **adoption loop** (2026-07-04, ✓ demo accept
 .venv/Scripts/python -m pytest -q
 ```
 
-18 system tests against a temp registry: read surfaces (catalog, detail, `latest` alias/redirect), download byte-identity, and every publish wall (token, disabled-without-token, immutability/409, missing SKILL.md, name mismatch, bad name/version, zip-slip, non-zip body). UI look stays `[review]`.
+26 system tests against a temp registry: read surfaces (catalog, detail, `latest` alias/redirect), download byte-identity, every publish wall (token, disabled-without-token, immutability/409, missing SKILL.md, name mismatch, bad name/version, zip-slip, non-zip body), and yank/unyank (hides from latest but keeps pins installable, bytes untouched, api/page flags, fully-yanked catalog state, token wall, unknown-version 404, unyank restores). UI look stays `[review]`.
 
-Last green: 2026-07-04 (18 passed).
+Last green: 2026-07-04 (26 passed).

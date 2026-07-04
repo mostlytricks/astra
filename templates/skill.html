@@ -16,6 +16,15 @@
            border: 1px solid var(--line); color: var(--dim); }
   a.vpill:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
   .vpill.cur { border-color: var(--accent2); color: var(--accent2); font-weight: 700; }
+  .vpill.yanked { text-decoration: line-through; color: var(--faint); opacity: .75; }
+
+  .yank-banner { display: flex; gap: 12px; align-items: baseline;
+                 background: var(--card); border: 1px solid var(--warn);
+                 border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+  .yank-banner .tag { font-family: var(--mono); font-size: 12px; text-transform: uppercase;
+                      letter-spacing: 1.5px; color: var(--warn); font-weight: 700; white-space: nowrap; }
+  .yank-banner .msg { color: var(--dim); font-size: 14px; }
+  .yank-banner .msg b { color: var(--ink); }
 
   .adopt { background: linear-gradient(160deg, var(--panel), var(--card));
            border: 1px solid var(--line2); border-radius: 14px; padding: 26px; margin-bottom: 44px;
@@ -69,18 +78,31 @@
     <span class="chip">files <b>{{ files | length }}</b></span>
     <span class="vpills">
       {% for v in versions %}
-        {% if v == version %}<span class="vpill cur">{{ v }}</span>
-        {% else %}<a class="vpill" href="/skills/{{ name }}/{{ v }}">{{ v }}</a>{% endif %}
+        {% set yk = v in yanked_versions %}
+        {% if v == version %}<span class="vpill cur{{ ' yanked' if yk }}">{{ v }}</span>
+        {% else %}<a class="vpill{{ ' yanked' if yk }}" href="/skills/{{ name }}/{{ v }}">{{ v }}</a>{% endif %}
       {% endfor %}
     </span>
   </div>
 </div>
 
+{% if yanked %}
+<div class="yank-banner">
+  <span class="tag">withdrawn</span>
+  <span class="msg">v{{ version }} has been <b>yanked</b> by the curator and is no longer recommended.
+    {% if yank_reason %}Reason: {{ yank_reason }} {% endif %}
+    {% if newest_live %}Prefer <a href="/skills/{{ name }}/{{ newest_live }}">v{{ newest_live }}</a>.
+    {% else %}Every version of this skill is currently withdrawn.{% endif %}
+    Existing installs still work; the command below stays pinned to this version.</span>
+</div>
+{% endif %}
+
 <div class="adopt">
   <h2>Adopt this skill</h2>
   <p class="sub">One paste in PowerShell — installs to your personal skills folder. No git, no accounts.
     {% if is_latest %}This command <b>tracks latest</b>: the same paste later installs whatever is newest.
-    {% else %}This command is <b>pinned to v{{ version }}</b> — an older release; latest is v{{ versions[-1] }}.{% endif %}</p>
+    {% elif yanked %}This command is <b>pinned to v{{ version }}</b> — a withdrawn release.{% if newest_live %} Latest is v{{ newest_live }}.{% endif %}
+    {% else %}This command is <b>pinned to v{{ version }}</b> — an older release; latest is v{{ newest_live or versions[-1] }}.{% endif %}</p>
   <div class="cmd-block">
     <div class="cmd" id="cmd">{{ install_cmd }}</div>
     <button class="copy" onclick="copyText(this, 'cmd')">Copy</button>

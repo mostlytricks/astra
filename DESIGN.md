@@ -41,6 +41,10 @@ CSS is the implementation. Change both together or neither.
 - **List rows** (catalog `.row`): border card, hover = `--line2` border + 1px lift + `--card` bg. Two-line description clamp.
 - **Version pills** (`.vpill`): current = `--accent2` border/text; others link. Immutability made visible.
 - **Section titles**: 13px uppercase, letter-spacing 2.5px, `--faint`, bottom border.
+- **Withdrawn/yank state** (`--warn` only, no new color): a yanked version's page shows
+  a `.yank-banner` (card bg, `--warn` border, uppercase mono "withdrawn" tag) above the
+  adopt panel; its version pill is line-through + `--faint`; a fully-withdrawn skill gets
+  a `.chip.warn` on the catalog row. The bytes never change — yank is a visible flag, not a delete.
 
 ## Anti-patterns
 

@@ -76,19 +76,57 @@ def list_registry() -> dict[str, list[str]]:
     return out
 
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    skills = []
+def yank_marker(name: str, version: str) -> Path:
+    """Sidecar path for a version's yank state. Lives *beside* the immutable
+    version folder, never inside it — the published bytes never change; a yank
+    is metadata about a version, not an edit to its content."""
+    return REGISTRY / name / f"{version}.yanked"
+
+
+def yanked_versions(name: str) -> dict[str, str]:
+    """version -> reason for every yanked version of a skill (reason may be '')."""
+    d = REGISTRY / name
+    out: dict[str, str] = {}
+    if d.is_dir():
+        for p in d.glob("*.yanked"):
+            if p.is_file():
+                out[p.name[: -len(".yanked")]] = p.read_text(encoding="utf-8").strip()
+    return out
+
+
+def require_token(request: Request) -> None:
+    """Curator gate shared by every write endpoint (publish, yank, unyank)."""
+    token = os.environ.get("ASTRA_PUBLISH_TOKEN", "")
+    if not token:
+        raise HTTPException(403, "curator actions disabled: ASTRA_PUBLISH_TOKEN not set on server")
+    if request.headers.get("x-astra-token") != token:
+        raise HTTPException(401, "bad or missing X-Astra-Token header")
+
+
+def catalog() -> list[dict]:
+    """One row per skill for the index page and JSON API — derived live from the
+    registry tree. `latest` is the newest *non-yanked* version (yank hides from
+    latest); a fully-yanked skill falls back to its newest version, flagged."""
+    items = []
     for name, versions in list_registry().items():
-        latest = versions[-1]
+        yanked = yanked_versions(name)
+        live = [v for v in versions if v not in yanked]
+        latest = live[-1] if live else versions[-1]
         meta, _ = parse_skill_md(REGISTRY / name / latest / "SKILL.md")
-        skills.append({
+        items.append({
             "name": name,
             "latest": latest,
             "versions": versions,
+            "yanked": sorted(yanked, key=semver_key),
+            "fully_yanked": not live,
             "description": meta.get("description", ""),
         })
-    return templates.TemplateResponse(request, "index.html", {"skills": skills})
+    return items
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse(request, "index.html", {"skills": catalog()})
 
 
 # ---------------------------------------------------------------------------
@@ -97,17 +135,7 @@ def index(request: Request):
 
 @app.get("/api/skills")
 def api_skills():
-    items = []
-    for name, versions in list_registry().items():
-        latest = versions[-1]
-        meta, _ = parse_skill_md(REGISTRY / name / latest / "SKILL.md")
-        items.append({
-            "name": name,
-            "latest": latest,
-            "versions": versions,
-            "description": meta.get("description", ""),
-        })
-    return {"skills": items}
+    return {"skills": catalog()}
 
 
 @app.get("/api/skills/{name}/latest")
@@ -123,18 +151,18 @@ def api_skill(name: str, version: str):
         str(p.relative_to(d)).replace("\\", "/")
         for p in d.rglob("*") if p.is_file()
     )
-    return {"name": name, "version": version, "metadata": meta, "files": files}
+    reasons = yanked_versions(name)
+    return {
+        "name": name, "version": version, "metadata": meta, "files": files,
+        "yanked": version in reasons, "yank_reason": reasons.get(version, ""),
+    }
 
 
 @app.post("/api/publish", status_code=201)
 async def api_publish(request: Request, name: str, version: str):
     """Curator-only ingest: raw zip body + ?name=&version=. The zip's contents
     become registry/<name>/<version>/ — after every wall below holds."""
-    token = os.environ.get("ASTRA_PUBLISH_TOKEN", "")
-    if not token:
-        raise HTTPException(403, "publishing disabled: ASTRA_PUBLISH_TOKEN not set on server")
-    if request.headers.get("x-astra-token") != token:
-        raise HTTPException(401, "bad or missing X-Astra-Token header")
+    require_token(request)
     if not NAME_RE.match(name):
         raise HTTPException(400, f"skill name must be kebab-case: {name!r}")
     if not SEMVER_RE.match(version):
@@ -175,11 +203,41 @@ async def api_publish(request: Request, name: str, version: str):
     return {"published": f"{name}@{version}", "page": f"/skills/{name}/{version}"}
 
 
+@app.post("/api/yank")
+async def api_yank(request: Request, name: str, version: str, reason: str = ""):
+    """Curator-only withdrawal: hide a version from `latest` and flag it, without
+    touching its bytes (pins keep working — this is yank, not delete). Reversible
+    via unyank. Reason comes from ?reason= or, if absent, the raw request body."""
+    require_token(request)
+    skill_dir(name, version)  # 404 if the version doesn't exist
+    if not reason:
+        reason = (await request.body()).decode("utf-8", "replace").strip()
+    yank_marker(name, version).write_text(reason, encoding="utf-8")
+    return {"yanked": f"{name}@{version}", "reason": reason}
+
+
+@app.post("/api/unyank")
+def api_unyank(request: Request, name: str, version: str):
+    """Reverse a yank — a yank is metadata, so restoring is just removing it."""
+    require_token(request)
+    marker = yank_marker(name, version)
+    if not marker.is_file():
+        raise HTTPException(404, f"{name}@{version} is not yanked")
+    marker.unlink()
+    return {"unyanked": f"{name}@{version}"}
+
+
 def resolve_latest(name: str) -> str:
+    """Newest *installable* version — yank hides a version from `latest`, so a
+    saved latest-tracking command never resolves to a withdrawn release."""
     versions = list_registry().get(name)
     if not versions:
         raise HTTPException(status_code=404, detail=f"no skill named {name}")
-    return versions[-1]
+    yanked = yanked_versions(name)
+    live = [v for v in versions if v not in yanked]
+    if not live:
+        raise HTTPException(status_code=404, detail=f"all versions of {name} are yanked")
+    return live[-1]
 
 
 # "latest" alias routes — declared BEFORE the {version} routes so the literal
@@ -203,7 +261,13 @@ def skill_page(request: Request, name: str, version: str):
         for p in d.rglob("*") if p.is_file()
     )
     versions = list_registry().get(name, [version])
-    is_latest = version == versions[-1]
+    reasons = yanked_versions(name)
+    this_yanked = version in reasons
+    live = [v for v in versions if v not in reasons]
+    newest_live = live[-1] if live else None
+    # a yanked version is never the install target for `latest`; it also can't
+    # equal newest_live (it's excluded from `live`), so is_latest is False for it
+    is_latest = version == newest_live
     base = str(request.base_url).rstrip("/")
     # the latest version's page hands out a latest-tracking command, so a
     # shared/saved paste keeps installing the newest release after bumps
@@ -218,6 +282,10 @@ def skill_page(request: Request, name: str, version: str):
         "name": meta.get("name", name),
         "version": version,
         "versions": versions,
+        "yanked_versions": list(reasons),
+        "yanked": this_yanked,
+        "yank_reason": reasons.get(version, ""),
+        "newest_live": newest_live,
         "is_latest": is_latest,
         "description": meta.get("description", ""),
         "body_html": markdown.markdown(body, extensions=["fenced_code", "tables"]),

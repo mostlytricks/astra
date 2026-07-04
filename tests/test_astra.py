@@ -49,12 +49,25 @@ def publish(client, name, version, zip_bytes, token="sekrit"):
     )
 
 
+def yank(client, name, version, reason="", token="sekrit", verb="yank"):
+    url = f"/api/{verb}?name={name}&version={version}"
+    if reason:
+        url += f"&reason={reason}"
+    return client.post(url, headers={"X-Astra-Token": token} if token else {})
+
+
+def seed_second_version(client, version="1.10.0", desc="v2 desc"):
+    z = make_zip({"SKILL.md": SKILL_MD.format(name="demo", description=desc)})
+    assert publish(client, "demo", version, z).status_code == 201
+
+
 # --- read surfaces ---------------------------------------------------------
 
 def test_catalog_lists_seeded_skill(client):
     data = client.get("/api/skills").json()
     assert data["skills"] == [{
         "name": "demo", "latest": "1.0.0", "versions": ["1.0.0"],
+        "yanked": [], "fully_yanked": False,
         "description": "a seeded demo skill",
     }]
 
@@ -188,3 +201,70 @@ def test_publish_rejects_zip_slip(client):
 
 def test_publish_rejects_non_zip_body(client):
     assert publish(client, "x", "1.0.0", b"just some text").status_code == 400
+
+
+# --- yank / unyank ---------------------------------------------------------
+
+def test_yank_hides_from_latest_but_keeps_pin_installable(client):
+    seed_second_version(client)  # demo now has 1.0.0 + 1.10.0, latest = 1.10.0
+    assert yank(client, "demo", "1.10.0", reason="broken build").status_code == 200
+
+    # latest now resolves to the older live version everywhere
+    assert client.get("/skills/demo/latest").url.path.endswith("/demo/1.0.0")
+    assert client.get("/api/skills/demo/latest").json()["version"] == "1.0.0"
+    assert client.get("/api/skills").json()["skills"][0]["latest"] == "1.0.0"
+
+    # but the yanked version is NOT deleted — its pinned page + download still work
+    assert client.get("/skills/demo/1.10.0").status_code == 200
+    zf = zipfile.ZipFile(io.BytesIO(client.get("/skills/demo/1.10.0/download").content))
+    assert "v2 desc" in zf.read("SKILL.md").decode("utf-8")
+
+
+def test_yank_marks_api_and_page(client):
+    seed_second_version(client)
+    yank(client, "demo", "1.10.0", reason="oops")
+    meta = client.get("/api/skills/demo/1.10.0").json()
+    assert meta["yanked"] is True and meta["yank_reason"] == "oops"
+    assert client.get("/api/skills").json()["skills"][0]["yanked"] == ["1.10.0"]
+
+    page = client.get("/skills/demo/1.10.0").text
+    assert "withdrawn" in page and "oops" in page
+    assert "/skills/demo/1.10.0/download" in page  # pinned, not latest-tracking
+
+
+def test_yank_leaves_published_bytes_untouched(client):
+    before = (main.REGISTRY / "demo" / "1.0.0" / "SKILL.md").read_bytes()
+    yank(client, "demo", "1.0.0")
+    after = (main.REGISTRY / "demo" / "1.0.0" / "SKILL.md").read_bytes()
+    assert before == after  # immutability: yank is a sidecar, never an edit
+
+
+def test_fully_yanked_skill_shows_withdrawn_but_still_listed(client):
+    yank(client, "demo", "1.0.0")  # the only version
+    item = client.get("/api/skills").json()["skills"][0]
+    assert item["fully_yanked"] is True and item["latest"] == "1.0.0"
+    assert "withdrawn" in client.get("/").text
+    # latest alias 404s — nothing installable via latest
+    assert client.get("/skills/demo/latest").status_code == 404
+
+
+def test_unyank_restores(client):
+    seed_second_version(client)
+    yank(client, "demo", "1.10.0")
+    assert client.get("/api/skills/demo/latest").json()["version"] == "1.0.0"
+    assert yank(client, "demo", "1.10.0", verb="unyank").status_code == 200
+    assert client.get("/api/skills/demo/latest").json()["version"] == "1.10.0"
+
+
+def test_yank_requires_token(client):
+    assert yank(client, "demo", "1.0.0", token="wrong").status_code == 401
+    assert yank(client, "demo", "1.0.0", token=None).status_code == 401
+
+
+def test_yank_404s_for_unknown_version(client):
+    assert yank(client, "demo", "9.9.9").status_code == 404
+    assert yank(client, "nope", "1.0.0").status_code == 404
+
+
+def test_unyank_404s_when_not_yanked(client):
+    assert yank(client, "demo", "1.0.0", verb="unyank").status_code == 404
