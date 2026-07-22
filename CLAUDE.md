@@ -3,7 +3,7 @@
 **A**gent **S**kill **T**ransfer & **R**egistry **A**pp — an intranet web service where colleagues browse curated agent skills (rendered `SKILL.md` is the sales page), decide to adopt, and install by pasting **one command** — no git, no GitHub, anywhere in the flow.
 
 > **alias:** `astra`
-> gravity: v1.4 — flat two-doc (no `.gravity/`; revisit if registry lifecycle rules outgrow this file)
+> gravity: v2.10 — flat two-doc (no `.gravity/`; revisit if registry lifecycle rules outgrow this file)
 
 ---
 
