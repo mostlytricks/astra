@@ -6,7 +6,7 @@
      reality, Next Step = one item. Trim when Completed > ~6 bullets or file > ~80 lines.
      See workspace CLAUDE.md §6 "Keeping CONTEXT.md small". -->
 
-Last touched: 2026-07-05
+Last touched: 2026-07-11 (shipped → stable/ — v0.1.0 live, no active arc)
 
 ## Completed
 - **Version history view** (2026-07-05): `/skills/{name}` (single-segment, no route-order collision) renders a timeline of every immutable version newest-first (per-version description/files, latest/withdrawn badges); `/api/skills/{name}` is the JSON twin. Linked from the catalog version-count chip + the skill page. 39 tests green; route-order verified intact.
@@ -21,4 +21,4 @@ Last touched: 2026-07-05
 - Intranet deployment deferred (user's own task; one-liners auto-adapt to serving host).
 
 ## Next Step
-- `next` lane = adoption analytics (download counts — is curation landing?); needs a write-path (counter) on the otherwise read-only registry. `later`: skill compatibility metadata. User cuts v0.2.0 whenever ready — tree is release-clean.
+- **STABLE (shipped 2026-07-11).** Reactivate to cut **v0.2.0** (`[Unreleased]` holds a minor's worth: UI, astra-curate, bundle-contract, curator v1.1.0, install-verification) or when adoption analytics (download counts) becomes worth building — that needs a write-path counter on the otherwise read-only registry. `later` lane: skill compatibility metadata.
